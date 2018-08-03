@@ -179,8 +179,8 @@ class BoxBuilder:
 
             name = self.ann.next()
             # name = name.split('.')[0]
-            if name in self.ann.boxes:
-                bboxes = self.ann.boxes[name].copy()
+            if name in self.all_boxes_to_write:
+                bboxes = self.all_boxes_to_write[name].copy()
                 self.all_box_in_one_image = bboxes
             else:
                 self.all_box_in_one_image = []
