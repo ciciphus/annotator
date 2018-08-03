@@ -24,7 +24,7 @@ class BoxBuilder:
         self.show = None
         # box is  x1, x2, x3, x4
         self.all_box_in_one_image = []
-        self.all_boxes_to_write = {}
+        self.all_boxes_to_write = self.ann.boxes.copy()
         self.image = []
         self.stop = False
 
@@ -39,8 +39,7 @@ class BoxBuilder:
         for xs, ys in self.all_box_in_one_image:
             xs.append(xs[0])
             ys.append(ys[0])
-            print(xs, ys)
-            self.ax.add_line(Line2D(xs, ys))
+            self.ax.add_line(Line2D(xs, ys, color='r'))
 
     def left_click(self, event):
         """
@@ -48,6 +47,8 @@ class BoxBuilder:
         :param event:
         :return:
         """
+        if not (event.xdata and event.ydata):
+            return
         self.xs.append(event.xdata)
         self.ys.append(event.ydata)
 
@@ -55,12 +56,11 @@ class BoxBuilder:
         if len(self.xs) == 4:
             # self.fig.canvas.mpl_disconnect(self.cid)
             self.all_box_in_one_image.append((self.xs[0:4], self.ys[0:4]))
-            print(self.all_box_in_one_image)
             self.xs.append(self.xs[0])
             self.ys.append(self.ys[0])
             self.stop = True
 
-        self.ax.add_line(Line2D(self.xs, self.ys))
+        self.ax.add_line(Line2D(self.xs, self.ys, color='#ee2020'))
 
         if self.stop:
             self.xs = []
@@ -82,7 +82,6 @@ class BoxBuilder:
         :param event:
         :return:
         """
-        print('click', event)
 
         if event.button == 1:
             self.left_click(event)
@@ -100,8 +99,8 @@ class BoxBuilder:
                 self.ann.index += 1
                 self.reload_image()
             else:
-                print("wow finished")
-                self.ann.save_csv(self.all_boxes_to_write)
+                self.finish()
+
         elif event.key == 'b':
             if self.ann.index > 0:
                 self.ann.index -= 1
@@ -151,6 +150,13 @@ class BoxBuilder:
             min_index = -1
         return min_index
 
+    def finish(self):
+        print("wow finished")
+        name = self.ann.img_name
+        self.all_boxes_to_write[name] = self.all_box_in_one_image
+        self.ann.save_csv(self.all_boxes_to_write)
+        plt.close(self.fig)
+
     def clear(self):
         """
         clear data before start labeling new image
@@ -162,7 +168,7 @@ class BoxBuilder:
 
     def reload_image(self, clear=True):
         """
-        go image of current index, not necessary "next"
+        load image, not necessary "next"
         it depends on the current index
         :return: 
         """
@@ -172,11 +178,9 @@ class BoxBuilder:
             self.clear()
 
             name = self.ann.next()
-            print(name)
-            name = name.split('.')[0]
+            # name = name.split('.')[0]
             if name in self.ann.boxes:
-                print(name, " in boxes")
-                bboxes = self.ann.boxes[name]
+                bboxes = self.ann.boxes[name].copy()
                 self.all_box_in_one_image = bboxes
             else:
                 self.all_box_in_one_image = []
@@ -186,10 +190,7 @@ class BoxBuilder:
         if self.all_box_in_one_image:
             self.init_draw()
 
-
-
 if __name__ == '__main__':
-
     box_builder = BoxBuilder()
     plt.show(block=True)
 

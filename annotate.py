@@ -17,12 +17,13 @@ class Annotator:
         self.index = 0
 
         # read from path
-        self.r_csv_path = '/Users/ci.chen/temp/no-use/73018_result.csv'
+        self.r_csv_path = '/Users/ci.chen/temp/no-use/73018_new_result.csv'
         self.w_csv_path = '/Users/ci.chen/temp/no-use/73018_new_result.csv'
 
         self.read_csv()
 
         self.img_dir = '/Users/ci.chen/vic_img/'
+        # self.img_dir = '/Users/ci.chen/temp/no-use/test/'
         self.img_name = '00046622.jpg'
         self.img_path = os.path.join(self.img_dir, self.img_name)
         self.img_names = []
@@ -47,12 +48,6 @@ class Annotator:
         """
         self.image = misc.imread(img_path)
 
-    def jump(self):
-        """
-        skip the images that has already corrected
-        :return:
-        """
-
     def read_csv(self):
         """
         read prelabeled labels into dictionary
@@ -70,7 +65,15 @@ class Annotator:
                 if not i:
                     continue
                 datum = row[0].split(',')
-                name = datum[0].split('\"')[3]
+
+                if "\"" in datum[0]:
+                    name = datum[0].split('\"')[3]
+                    if len(name.split('.')) == 1:
+                        name = name + '.jpg'
+                else:
+                    name = datum[0]
+
+                # print(name)
 
                 for index, coord in enumerate(datum):
                     if index % 2 == 1:
@@ -83,23 +86,28 @@ class Annotator:
                     positions = []
 
                 positions.append((xs, ys))
-                last_pic = datum[0].split('\"')[3]
+                last_pic = name
 
         self.boxes[last_pic] = positions
+
 
     def save_csv(self, boxes):
         """
         save new labels as csv
         :return:
         """
-        rows = []
+        rows = [["image", "x1", "y1", "x2", "y2", 'x3', 'y3', 'x4', 'y4']]
+        # print(boxes)
         for name, box in boxes.items():
-            name = name.split('.')[0]
-            row = [name]
-            for i in range(4):
-                row.append(box[0][i])
-                row.append(box[1][i])
-            rows.append(row)
+            for single_box in box:
+                # name = name.split('.')[0]
+                row = [name]
+                # print(single_box)
+
+                for i in range(4):
+                    row.append(int(single_box[0][i]))
+                    row.append(int(single_box[1][i]))
+                rows.append(row)
 
         def writeCSV(rows):
             with open(self.w_csv_path, 'w') as File:
@@ -108,8 +116,11 @@ class Annotator:
 
         writeCSV(rows)
 
-
     def get_img_names(self):
+        """
+        helper function to get image names in the folder
+        :return:
+        """
         file_names = os.listdir(self.img_dir)
         for file_name in file_names:
             if file_name.endswith(".jpg") or file_name.endswith(".png"):
